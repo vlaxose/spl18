@@ -12,7 +12,7 @@ total_num_of_clusters = 2; % number of clusters for the mmWave channel
 total_num_of_rays = 1; % number of rays for the mmWave channel
 L = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
 snr_range = [0:5:25]; % range of the transmit signal-to-noise ratio
-Imax = 100; % maximum number of iterations for the iterative algorithms
+Imax = 50; % maximum number of iterations for the iterative algorithms
 maxMCRealizations = 50;
 
 %% Variables initialization
