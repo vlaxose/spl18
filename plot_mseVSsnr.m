@@ -5,15 +5,15 @@ addpath('basic_system_functions');
 addpath(genpath('benchmark_algorithms'));
 
 %% Parameter initialization
-Mt = 32; % number of TX antennas
+Mt = 64; % number of TX antennas
 Mr = Mt; % number of RX antennas
-T = [200]; % training length
+T = [400]; % training length
 total_num_of_clusters = 2; % number of clusters for the mmWave channel
 total_num_of_rays = 1; % number of rays for the mmWave channel
 L = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
 snr_range = [0:5:25]; % range of the transmit signal-to-noise ratio
 Imax = 100; % maximum number of iterations for the iterative algorithms
-maxMCRealizations = 1;
+maxMCRealizations = 50;
 Dr = 1/sqrt(Mr)*exp(-1j*[0:Mr-1]'*2*pi*[0:Mr-1]/Mr);
 Dt = 1/sqrt(Mt)*exp(-1j*[0:Mt-1]'*2*pi*[0:Mt-1]/Mt);
 B = kron(conj(Dt), Dr);
@@ -35,7 +35,7 @@ for snr_indx = 1:length(snr_range)
   for sub_indx=1:length(T)
 
     
-   for r=1:maxMCRealizations
+   parfor r=1:maxMCRealizations
     disp(['=> SNR:', num2str(snr_range(snr_indx)), 'dB, ', 'realization: ', num2str(r)]);
 
     % Create the mmWave MIMO channel
