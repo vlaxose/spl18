@@ -7,16 +7,13 @@ addpath(genpath('benchmark_algorithms'));
 %% Parameter initialization
 Mt = 64; % number of TX antennas
 Mr = Mt; % number of RX antennas
-T = [400]; % training length
+T_range = [400]; % training length
 total_num_of_clusters = 2; % number of clusters for the mmWave channel
 total_num_of_rays = 1; % number of rays for the mmWave channel
 L = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
 snr_range = [0:5:25]; % range of the transmit signal-to-noise ratio
 Imax = 100; % maximum number of iterations for the iterative algorithms
 maxMCRealizations = 50;
-Dr = 1/sqrt(Mr)*exp(-1j*[0:Mr-1]'*2*pi*[0:Mr-1]/Mr);
-Dt = 1/sqrt(Mt)*exp(-1j*[0:Mt-1]'*2*pi*[0:Mt-1]/Mt);
-B = kron(conj(Dt), Dr);
 
 %% Variables initialization
 error_proposed = zeros(maxMCRealizations,1);
@@ -28,12 +25,16 @@ mean_error_omp =  zeros(length(T), length(snr_range));
 mean_error_vamp =  zeros(length(T), length(snr_range));
 mean_error_twostage =  zeros(length(T), length(snr_range));
 
-%% Iterations for different SNRs, subsampling and MC realizations
+Dr = 1/sqrt(Mr)*exp(-1j*[0:Mr-1]'*2*pi*[0:Mr-1]/Mr);
+Dt = 1/sqrt(Mt)*exp(-1j*[0:Mt-1]'*2*pi*[0:Mt-1]/Mt);
+B = kron(conj(Dt), Dr);
+
+%% Iterations for different SNRs, , training length and MC realizations
 for snr_indx = 1:length(snr_range)
   snr = 10^(-snr_range(snr_indx)/10);
 
-  for sub_indx=1:length(T)
-
+  for sub_indx=1:length(T_range)
+   T = T_range(sub_indx);
     
    parfor r=1:maxMCRealizations
     disp(['=> SNR:', num2str(snr_range(snr_indx)), 'dB, ', 'realization: ', num2str(r)]);
@@ -59,17 +60,17 @@ for snr_indx = 1:length(snr_range)
     
     % Sparse channel estimation
     disp('Running OMP-based sparse reconstruction...');
-    s_omp = OMP(M, y, 20*L);
+    s_omp = OMP(M, y, 2*L);
     X_omp = Dr*reshape(s_omp, Mr, Mt)*Dt';
     S_omp = reshape(s_omp, Mr, Mt);
     error_omp(r) = norm(H-X_omp)^2/norm(H)^2;      
 
-    % ADMM matrix completion with side-information
+    % Proposed technique based on ADMM matrix completion with side-information
     disp('Running proposed algorithm...');
     rho = 0.005;
     tau_S = .1/(1+snr_range(snr_indx));
-    X_mcsi = proposed_algorithm(H, OH, Omega, Dr, Dt, Imax, rho*norm(OH), tau_S, rho, 1);
-    error_proposed(r) = norm(H-X_mcsi)^2/norm(H)^2;
+    X_proposed = proposed_algorithm(H, OH, Omega, Dr, Dt, Imax, rho*norm(OH), tau_S, rho, 1);
+    error_proposed(r) = norm(H-X_proposed)^2/norm(H)^2;
 
    end
 
