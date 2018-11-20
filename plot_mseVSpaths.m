@@ -87,7 +87,7 @@ figure;
 p11 = semilogy(paths_range, (mean_error_omp(1, :)));hold on;
 set(p11,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', '>', 'MarkerSize', 6, 'Color', 'Black');
 p12 = semilogy(paths_range, (mean_error_vamp(1, :)));hold on;
-set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Blue', 'MarkerFaceColor', 'Black', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Black');
+set(p12,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 'o', 'MarkerSize', 6, 'Color', 'Black');
 p13 = semilogy(paths_range, (mean_error_twostage(1, :)));hold on;
 set(p13,'LineWidth',2, 'LineStyle', '-', 'MarkerEdgeColor', 'Black', 'MarkerFaceColor', 'Black', 'Marker', 's', 'MarkerSize', 6, 'Color', 'Black');
 p14 = semilogy(paths_range, (mean_error_proposed(1, :)));hold on;

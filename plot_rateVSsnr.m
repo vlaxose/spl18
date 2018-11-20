@@ -10,11 +10,10 @@ Mr = Mt;
 total_num_of_clusters = 2; % number of clusters for the mmWave channel
 total_num_of_rays = 1; % number of rays for the mmWave channel
 L = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
-
 snr_range = [0:5:25]; % range of the transmit signal-to-noise ratio
 T_range = [2458]; % training length
 Imax = 50; % maximum number of iterations for the iterative algorithms
-maxMCRealizations = 10;
+maxMCRealizations = 1;
 
 %% Variables initialization
 
@@ -23,11 +22,11 @@ rate_opt = zeros(maxMCRealizations,1);
 rate_omp = zeros(maxMCRealizations,1);
 rate_vamp = zeros(maxMCRealizations,1);
 rate_twostage = zeros(maxMCRealizations,1);
-mean_rate_proposed = zeros(length(subSamplingRatio_range), length(snr_range));
-mean_rate_opt =  zeros(length(subSamplingRatio_range), length(snr_range));
-mean_rate_omp =  zeros(length(subSamplingRatio_range), length(snr_range));
-mean_rate_vamp =  zeros(length(subSamplingRatio_range), length(snr_range));
-mean_rate_twostage =  zeros(length(subSamplingRatio_range), length(snr_range));
+mean_rate_proposed = zeros(length(T_range), length(snr_range));
+mean_rate_opt =  zeros(length(T_range), length(snr_range));
+mean_rate_omp =  zeros(length(T_range), length(snr_range));
+mean_rate_vamp =  zeros(length(T_range), length(snr_range));
+mean_rate_twostage =  zeros(length(T_range), length(snr_range));
 
 Dr = 1/sqrt(Mr)*exp(-1j*[0:Mr-1]'*2*pi*[0:Mr-1]/Mr);
 Dt = 1/sqrt(Mt)*exp(-1j*[0:Mt-1]'*2*pi*[0:Mt-1]/Mt);
@@ -41,45 +40,42 @@ for snr_indx = 1:length(snr_range)
   for sub_indx=1:length(T_range)
    T = T_range(sub_indx);
    
-   parfor r=1:maxMCRealizations
+   for r=1:maxMCRealizations
    disp(['realization: ', num2str(r)]);
 
     % Create the mmWave MIMO channel
-    [H,Ar,At] = generate_mmwave_channel(Mr, Mt, 1, Np);
+    [H,Ar,At] = generate_mmwave_channel(Mr, Mt, total_num_of_clusters, total_num_of_rays);
     
+    % Get the measurements at the RX of the transmitted training symbols   
+    [y,M,OH,Omega] = get_measurements_at_RX(H, T, snr, B);
 
     [Uh,Sh,Vh] = svd(H);
     rate_opt(r) = log2(real(det(eye(Mr)+1/(Mt*Mr)*1/snr*H*H')));
-    
-   
-    Fr = 1/sqrt(Mr)*exp(-1j*[0:Mr-1]'*2*pi*[0:Mr-1]/Mr);
-    Ft = 1/sqrt(Mt)*exp(-1j*[0:Mt-1]'*2*pi*[0:Mt-1]/Mt);
-    [y,M,OH,Omega] = system_model(H, Fr, Ft, round(subSamplingRatio_range(sub_indx)*Mt*Mr), snr);
 
 
     % VAMP sparse recovery
     s_vamp = vamp(y, M, snr, 2*L);
-    X_vamp = Fr*reshape(s_vamp, Mr, Mt)*Ft';
+    X_vamp = Dr*reshape(s_vamp, Mr, Mt)*Dt';
     [U_vamp, S_vamp, V_vamp] = svd(X_vamp);
     rate_vamp(r) = log2(real(det(eye(Mr) + 1/(Mt*Mr)*H*H'*1/(snr+norm(H-X_vamp)^2/norm(H)^2))));
 
     % Sparse channel estimation
     s_omp = OMP(M, y, 2*L);
-    X_omp = Fr*reshape(s_omp, Mr, Mt)*Ft';
+    X_omp = Dr*reshape(s_omp, Mr, Mt)*Dt';
     [U_omp, S_omp, V_omp] = svd(X_omp);
     rate_omp(r) = log2(real(det(eye(Mr) + 1/(Mt*Mr)*H*H'*1/(snr+norm(H-X_omp)^2/norm(H)^2))));
     
     % Proposed technique based on ADMM matrix completion with side-information
     rho = 0.005;
     tau_S = .1/(1+snr_range(snr_indx));
-    X_mcsi = mcsi_admm(H, OH, Omega, Fr, Ft, Imax, rho*norm(OH), tau_S, rho, 1);
+    X_mcsi = proposed_algorithm(H, OH, Omega, Dr, Dt, Imax, rho*norm(OH), tau_S, rho, 1);
     [U_mcsi,S_mcsi,V_mcsi] = svd(X_mcsi);
     rate_proposed(r) = log2(real(det(eye(Mr) + 1/(Mt*Mr)*H*H'*1/(snr+norm(H-X_mcsi)^2/norm(H)^2))));
     
     % Two-stage scheme matrix completion and sparse recovery
     X_twostage_1 = mc_svt(H, OH, Omega, Imax);
-    s_twostage = vamp(vec(X_twostage_1), kron(conj(Ft), Fr), 0.001, 2*L);
-    X_twostage = Fr*reshape(s_twostage, Mr, Mt)*Ft';
+    s_twostage = vamp(vec(X_twostage_1), kron(conj(Dt), Dr), 0.001, 2*L);
+    X_twostage = Dr*reshape(s_twostage, Mr, Mt)*Dt';
     [U_twostage,S_twostage,V_twostage] = svd(X_twostage);
     rate_twostage(r) = log2(real(det(eye(Mr) + 1/(Mt*Mr)*H*H'*1/(snr+norm(H-X_twostage)^2/norm(H)^2))));
    end
