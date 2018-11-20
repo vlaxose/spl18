@@ -11,7 +11,7 @@ total_num_of_clusters = 2; % number of clusters for the mmWave channel
 total_num_of_rays = 1; % number of rays for the mmWave channel
 L = total_num_of_clusters*total_num_of_rays; % Total number of distinct paths of the mmWave channel
 snr_range = [0:5:25]; % range of the transmit signal-to-noise ratio
-T_range = [2458]; % training length
+T_range = [800]; % training length
 Imax = 50; % maximum number of iterations for the iterative algorithms
 maxMCRealizations = 1;
 
@@ -109,4 +109,4 @@ xlabel('SNR (dB)');
 ylabel('ASE')
 grid on;set(gca,'FontSize',12);
 
-savefig(strcat('results/rateVSsnr_',num2str(subSamplingRatio_range),'.fig'))
+savefig(strcat('results/rateVSsnr.fig'))
