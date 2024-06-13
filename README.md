@@ -12,4 +12,4 @@ doi: 10.1109/LSP.2018.2870533
 
 The code runs on MATLAB 2020a with Wavelet Toolbox installed.
 
-Contact person email: E.Vlachos@ed.ac.uk
+Contact person email: evlachos@athenarc.gr
